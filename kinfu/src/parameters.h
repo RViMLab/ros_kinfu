@@ -89,6 +89,9 @@
 #define PARAM_SNAME_EXTRACT_TEXTURES      "et"
 #define PARAM_DEFAULT_EXTRACT_TEXTURES    (bool(false))  // NOT IMPLEMENTED
 
+#define PARAM_NAME_FILE_PREFIX            "file_prefix"
+#define PARAM_DEFAULT_FILE_PREFIX         "/tmp/"
+
 #define PARAM_NAME_DEPTH_WIDTH            "depth_width"
 #define PARAM_DEFAULT_DEPTH_WIDTH         640
 

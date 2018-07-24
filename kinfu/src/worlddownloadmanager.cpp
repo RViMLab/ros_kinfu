@@ -457,8 +457,7 @@ void WorldDownloadManager::extractMeshWorker(kinfu_msgs::KinfuTsdfRequestConstPt
   if (req->request_transformation)
   {
     ROS_INFO("kinfu: A custom transformation will be applied.");
-    Eigen::Affine3f tr = toEigenAffine(req->transformation);
-    transformation = tr * transformation;
+    transformation = toEigenAffine(req->transformation);
   }
 
   ROS_INFO("kinfu: Applying transformation...");

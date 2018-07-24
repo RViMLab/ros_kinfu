@@ -87,7 +87,7 @@ namespace pcl
 
           /**Save Screenshot*/
           void
-          saveImage(const Eigen::Affine3f &camPose, pcl::gpu::PtrStepSz<const PixelRGB> rgb24);
+          saveImage(const Eigen::Affine3f &camPose, pcl::gpu::PtrStepSz<const PixelRGB> rgb24, std::string file_prefx="");
 
         private:
 

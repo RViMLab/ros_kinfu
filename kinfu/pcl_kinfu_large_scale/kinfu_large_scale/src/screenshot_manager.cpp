@@ -57,23 +57,23 @@ namespace pcl
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
       void
-      ScreenshotManager::saveImage(const Eigen::Affine3f &camPose, pcl::gpu::PtrStepSz<const PixelRGB> rgb24)
+      ScreenshotManager::saveImage(const Eigen::Affine3f &camPose, pcl::gpu::PtrStepSz<const PixelRGB> rgb24, std::string file_prefx)
       {
 
         PCL_WARN ("[o] [o] [o] [o] Saving screenshot [o] [o] [o] [o]\n");
 
         std::string file_extension_image = ".png";
         std::string file_extension_pose = ".txt";
-        std::string filename_image = "KinFuSnapshots/";
-        std::string filename_pose = "KinFuSnapshots/";
+        std::string filename_image = "KinFuSnapshots_";
+        std::string filename_pose = "KinFuSnapshots_";
 
         // Get Pose
         Eigen::Matrix<float, 3, 3, Eigen::RowMajor> erreMats = camPose.linear ();
                     Eigen::Vector3f teVecs = camPose.translation ();
 
                     // Create filenames
-                    filename_pose = filename_pose + boost::lexical_cast<std::string> (screenshot_counter) + file_extension_pose;
-                    filename_image = filename_image + boost::lexical_cast<std::string> (screenshot_counter) + file_extension_image;
+                    filename_pose = file_prefx + filename_pose + boost::lexical_cast<std::string> (screenshot_counter) + file_extension_pose;
+                    filename_image = file_prefx + filename_image + boost::lexical_cast<std::string> (screenshot_counter) + file_extension_image;
 
                     // Write files
                     writePose (filename_pose, teVecs, erreMats);

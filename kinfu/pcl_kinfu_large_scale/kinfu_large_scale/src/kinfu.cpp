@@ -737,8 +737,8 @@ pcl::gpu::kinfuLS::KinfuTracker::operator() (const DepthMap& depth_raw,const THi
   
   ///////////////////////////////////////////////////////////////////////////////////////////
   // Initialization at first frame
-  if (global_time_ == 0) // this is the frist frame, the tsdf volume needs to be initialized
-  {
+  if (global_time_ == 0) // this is the first frame, the tsdf volume needs to be initialized
+  {  
     // Initial rotation
     Matrix3frm initial_cam_rot = rmats_[0]; //  [Ri|ti] - pos of camera
     Matrix3frm initial_cam_rot_inv = initial_cam_rot.inverse ();

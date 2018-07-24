@@ -88,6 +88,19 @@ if (${KINFU_CONFIGURED})
     ${KinfuLargeScale_LIBRARIES}
     ${Eigen_LIBRARIES}
   )
+
+  add_executable(standalone_texture_mapping
+    src/standalone_texture_mapping.cpp
+    )
+
+  target_link_libraries(standalone_texture_mapping
+    ${CUDA_LIBRARIES}
+    ${PCL_LIBRARIES}
+    ${catkin_LIBRARIES}
+    ${KinfuLargeScale_LIBRARIES}
+    ${Eigen_LIBRARIES}
+  )
+
 endif()
 
 #############

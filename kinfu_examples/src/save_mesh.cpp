@@ -33,6 +33,12 @@ int main(int argc,char ** argv)
   kinfu_msgs::KinfuTsdfRequest & req_publish = req_goal.request;
   req_publish.tsdf_header.request_type = req_publish.tsdf_header.REQUEST_TYPE_GET_MESH;
   req_publish.request_remove_duplicates = true;
+  req_publish.request_transformation = true;
+  req_publish.transformation.linear.assign(0.f);
+  req_publish.transformation.linear.at(0)=1.f;
+  req_publish.transformation.linear.at(4)=1.f;
+  req_publish.transformation.linear.at(8)=1.f;
+  req_publish.transformation.translation.assign(0.f);
   action_client.sendGoal(req_goal);
 
   ROS_INFO("Waiting for result...");

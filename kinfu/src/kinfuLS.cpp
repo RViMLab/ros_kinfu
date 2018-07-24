@@ -305,17 +305,19 @@ class ImageSubscriber
     m_nh.param<std::string>(PARAM_NAME_CAMERA_INFO_TOPIC,camera_info_topic,prefix_topic + PARAM_DEFAULT_CAMERA_INFO_TOPIC);
 
     std::string image_topic;
-    m_nh.param<std::string>(PARAM_NAME_IMAGE_TOPIC,image_topic,prefix_topic + PARAM_NAME_IMAGE_TOPIC);
+    m_nh.param<std::string>(PARAM_NAME_IMAGE_TOPIC,image_topic,prefix_topic + PARAM_DEFAULT_IMAGE_TOPIC);
 
     bool enable_texture_extraction = PARAM_DEFAULT_EXTRACT_TEXTURES;
     m_nh.getParam(PARAM_NAME_EXTRACT_TEXTURES,enable_texture_extraction);
     m_nh.getParam(PARAM_SNAME_EXTRACT_TEXTURES,enable_texture_extraction);
 
+    int queue_size = 2;
+
     if (enable_texture_extraction)
     {
-      m_depth_sub.reset(new message_filters::Subscriber<Image>(m_nh, depth_image_topic, 2));
-      m_info_sub.reset(new message_filters::Subscriber<CameraInfo>(m_nh, camera_info_topic, 2));
-      m_rgb_sub.reset(new message_filters::Subscriber<Image>(m_nh, image_topic, 2));
+      m_depth_sub.reset(new message_filters::Subscriber<Image>(m_nh, depth_image_topic, queue_size));
+      m_info_sub.reset(new message_filters::Subscriber<CameraInfo>(m_nh, camera_info_topic, queue_size));
+      m_rgb_sub.reset(new message_filters::Subscriber<Image>(m_nh, image_topic, queue_size));
 
       //the depth and the rgb cameras are not hardware synchronized
       //hence the depth and rgb images normally do not have the EXACT timestamp
@@ -326,8 +328,8 @@ class ImageSubscriber
     }
     else
     {
-      m_depth_sub.reset(new message_filters::Subscriber<sensor_msgs::Image>(m_nh, depth_image_topic, 1));
-      m_info_sub.reset(new message_filters::Subscriber<sensor_msgs::CameraInfo>(m_nh, camera_info_topic, 1));
+      m_depth_sub.reset(new message_filters::Subscriber<sensor_msgs::Image>(m_nh, depth_image_topic, queue_size));
+      m_info_sub.reset(new message_filters::Subscriber<sensor_msgs::CameraInfo>(m_nh, camera_info_topic, queue_size));
 
       m_depth_only_sync.reset(new message_filters::Synchronizer<DISync>(DISync(500), *m_depth_sub, *m_info_sub));
       m_depth_only_sync->registerCallback(
@@ -447,9 +449,9 @@ struct KinFuLSApp
     m_world_download_manager.setReferenceFrameName(m_pose_publisher.getFirstFrameName());
 
     kinfu_->setInitialCameraPose(pose);
-    kinfu_->volume().setTsdfTruncDist(0.030f/*meters*/);
+    kinfu_->volume().setTsdfTruncDist(2.5f*vsz/vr /*meters*/);
     kinfu_->setIcpCorespFilteringParams(0.1f/*meters*/, sin(pcl::deg2rad(20.f)));
-    //kinfu_->setDepthTruncationForICP(3.f/*meters*/);
+    kinfu_->setDepthTruncationForICP(vsz /*meters*/);
     kinfu_->setCameraMovementThreshold(0.001f);
 
     //Init KinFuLSApp
@@ -457,6 +459,7 @@ struct KinFuLSApp
 
     frame_counter_ = 0;
     enable_texture_extraction_ = false;
+    file_prefix_ = "/tmp/";
     snapshot_rate_ = 45;
 
     m_depth_height = depth_height;
@@ -701,7 +704,7 @@ struct KinFuLSApp
     m_pose_publisher.publishPose(*kinfu_);
 
     //image_view_.publishGeneratedDepth(*kinfu_);
-/*
+
     //save snapshots
     if (enable_texture_extraction_)
     {
@@ -718,10 +721,10 @@ struct KinFuLSApp
           pixelRgbs[i].r = rgb->data[i * 3 + 2];
         }
         pcl::gpu::PtrStepSz<const pcl::gpu::kinfuLS::PixelRGB> rgb24(rgb->height, rgb->width, pixelRgbs, rgb->step);
-        screenshot_manager_.saveImage(kinfu_->getCameraPose(), rgb24);
+        screenshot_manager_.saveImage(kinfu_->getCameraPose(), rgb24, file_prefix_);
         delete[] pixelRgbs;
       }
-    }*/
+    }
   }
 
   void start()
@@ -752,6 +755,15 @@ struct KinFuLSApp
     return enable_texture_extraction_;
   }
 
+  void setFilePrefix(std::string file_prefix)
+  {
+    file_prefix_ = file_prefix;
+  }
+
+  std::string getFilePrefix()
+  {
+    return file_prefix_;
+  }
   void setExtractKnownPoints(bool e)
   {
     kinfu_->setExtractKnownPoints(e);
@@ -811,6 +823,7 @@ struct KinFuLSApp
   bool independent_camera_;
   int frame_counter_;
   bool enable_texture_extraction_;
+  std::string file_prefix_;
 
   bool registration_;
   bool integrate_colors_;
@@ -921,6 +934,10 @@ int main(int argc, char* argv[])
   nh.getParam(PARAM_NAME_EXTRACT_TEXTURES,enable_texture_extraction);
   nh.getParam(PARAM_SNAME_EXTRACT_TEXTURES,enable_texture_extraction);
   app.setEnableTextureExtraction(enable_texture_extraction);
+
+  std::string file_prefix = PARAM_DEFAULT_FILE_PREFIX;
+  nh.getParam(PARAM_NAME_FILE_PREFIX,file_prefix);
+  app.setFilePrefix(file_prefix);
 
   bool extract_known_points = PARAM_DEFAULT_EXTRACT_KNOWN_POINTS;
   nh.getParam(PARAM_NAME_EXTRACT_KNOWN_POINTS,extract_known_points);
