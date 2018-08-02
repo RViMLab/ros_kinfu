@@ -1,8 +1,10 @@
 <launch>
     <arg name="record" default="false" />
+    <arg name="not_playback" default="true" />
     <!-- Note that this is looking for ctr_data to be checked out in the same directory as ctr_ros -->
 	<arg name="kinect_name" default="kinect1" />
     <arg name="bagdir" default="$(env HOME)" />
+    <arg name="tempdir" default="/tmp/$(arg kinect_name)" />
     <arg name="bagname" default="$(arg kinect_name).bag" />
 	
 	
@@ -14,12 +16,15 @@
         />
     </group>
     <!-- If we are playing back, rosbag play the bagfile -->
-    <group unless="$(arg record)">
+    <group unless="$(arg not_playback)">
         <param name="/use_sim_time" value="true" />
         <node pkg="rosbag" type="play" name="rosbag_play"
               args=" $(arg bagdir)/$(arg bagname) --clock -r 0.4 "
         />
     </group>
+    
+    <!-- Hack to create the directory -->
+    <param name="mkdir_tmp" command="mkdir -m 777 -p $(arg tempdir)" />
     
     <node pkg="kinfu" type="kinfu" name="kinect_kinfu1" output="screen">
         <param name="prefix_topic" value="/$(arg kinect_name)" />
@@ -28,22 +33,22 @@
         <param name="autostart" value="true" />
         <param name="response_topic" value="/kinfu1_response_topic" />
         <param name="request_topic" value="/kinfu1_request_topic" />
-        <param name="extract_known_points" value="true" />
+        <param name="extract_known_points" value="false" />
         <param name="extract_incomplete_border_points" value="false" />
         <param name="extract_incomplete_frontier_points" value="false" />
         <param name="extract_surface_points" value="false" />
         <param name="extract_textures" value="true" />
         <param name="snapshot_rate" value="30" />
-        <param name="file_prefix" value="/tmp/$(arg kinect_name)/" />
+        <param name="file_prefix" value="$(arg tempdir)/" />
         <param name="volume_size" value="3.0" />
         <param name="shift_distance" value="1.5" />
-        <param name="volume_resolution" value="768" />
-        <param name="queue_size" value="2" />
+        <param name="volume_resolution" value="512" />
+        <param name="marching_cubes_volume_size" value="256" />
     </node>
   
     <include file="$(find openni_launch)/launch/openni.launch" >
         <arg name="camera" value="$(arg kinect_name)" />
-        <arg name="load_driver" value="$(arg record)" />
+        <arg name="load_driver" value="$(arg not_playback)" />
     </include>
     <!--node pkg="rviz" type="rviz" name="rviz"
     args="-d $(find kinect)/rviz/kinect.rviz" /-->

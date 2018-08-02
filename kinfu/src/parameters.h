@@ -87,7 +87,7 @@
 
 #define PARAM_NAME_EXTRACT_TEXTURES       "extract_textures"
 #define PARAM_SNAME_EXTRACT_TEXTURES      "et"
-#define PARAM_DEFAULT_EXTRACT_TEXTURES    (bool(false))  // NOT IMPLEMENTED
+#define PARAM_DEFAULT_EXTRACT_TEXTURES    (bool(false))
 
 #define PARAM_NAME_FILE_PREFIX            "file_prefix"
 #define PARAM_DEFAULT_FILE_PREFIX         "/tmp/"

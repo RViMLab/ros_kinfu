@@ -311,13 +311,11 @@ class ImageSubscriber
     m_nh.getParam(PARAM_NAME_EXTRACT_TEXTURES,enable_texture_extraction);
     m_nh.getParam(PARAM_SNAME_EXTRACT_TEXTURES,enable_texture_extraction);
 
-    int queue_size = 2;
-
     if (enable_texture_extraction)
     {
-      m_depth_sub.reset(new message_filters::Subscriber<Image>(m_nh, depth_image_topic, queue_size));
-      m_info_sub.reset(new message_filters::Subscriber<CameraInfo>(m_nh, camera_info_topic, queue_size));
-      m_rgb_sub.reset(new message_filters::Subscriber<Image>(m_nh, image_topic, queue_size));
+      m_depth_sub.reset(new message_filters::Subscriber<Image>(m_nh, depth_image_topic, 2));
+      m_info_sub.reset(new message_filters::Subscriber<CameraInfo>(m_nh, camera_info_topic, 2));
+      m_rgb_sub.reset(new message_filters::Subscriber<Image>(m_nh, image_topic, 2));
 
       //the depth and the rgb cameras are not hardware synchronized
       //hence the depth and rgb images normally do not have the EXACT timestamp
@@ -328,8 +326,8 @@ class ImageSubscriber
     }
     else
     {
-      m_depth_sub.reset(new message_filters::Subscriber<sensor_msgs::Image>(m_nh, depth_image_topic, queue_size));
-      m_info_sub.reset(new message_filters::Subscriber<sensor_msgs::CameraInfo>(m_nh, camera_info_topic, queue_size));
+      m_depth_sub.reset(new message_filters::Subscriber<sensor_msgs::Image>(m_nh, depth_image_topic, 1));
+      m_info_sub.reset(new message_filters::Subscriber<sensor_msgs::CameraInfo>(m_nh, camera_info_topic, 1));
 
       m_depth_only_sync.reset(new message_filters::Synchronizer<DISync>(DISync(500), *m_depth_sub, *m_info_sub));
       m_depth_only_sync->registerCallback(
@@ -721,7 +719,7 @@ struct KinFuLSApp
           pixelRgbs[i].r = rgb->data[i * 3 + 2];
         }
         pcl::gpu::PtrStepSz<const pcl::gpu::kinfuLS::PixelRGB> rgb24(rgb->height, rgb->width, pixelRgbs, rgb->step);
-        screenshot_manager_.saveImage(kinfu_->getCameraPose(), rgb24, file_prefix_);
+        screenshot_manager_.saveImage(kinfu_->getCameraPose(), rgb24, file_prefix_, rgb->width, rgb->height);
         delete[] pixelRgbs;
       }
     }

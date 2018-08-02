@@ -1,0 +1,44 @@
+<launch>
+	<arg name="kinect_name" default="kinect2" />
+    <arg name="tempdir" default="/tmp/$(arg kinect_name)" />
+	
+    <include file="$(find kinect2_bridge)/launch/kinect2_bridge.launch" >
+	    <arg name="output" value="log" />
+	    <arg name="min_depth" value="0.2" />
+    </include>
+	
+    <!-- Hack to create the directory -->
+    <param name="timestamp" command="date +%Y-%m-%d_%Ih%Mm%S" />
+    <param name="mkdir_tmp" command="mkdir -m 777 -p $(arg tempdir)" />
+    
+    <node pkg="kinfu" type="kinfu" name="kinect_kinfu1" output="screen">
+        <param name="prefix_topic" value="/kinect2" />
+        <param name="camera_info_topic" value="/$(arg kinect_name)/sd/camera_info" />
+        <param name="depth_image_topic" value="/$(arg kinect_name)/sd/image_depth_rect" />
+        <param name="image_topic" value="/$(arg kinect_name)/sd/image_color_rect" />
+        <param name="extract_textures" value="true" />
+        <param name="snapshot_rate" value="30" />
+        <param name="file_prefix" value="$(arg tempdir)/" />
+        <!--
+        <param name="extract_known_points" value="false" />
+        <param name="extract_incomplete_border_points" value="false" />
+        <param name="extract_incomplete_frontier_points" value="false" />
+        <param name="extract_surface_points" value="false" />
+        <param name="volume_size" value="3.0" />
+        <param name="shift_distance" value="1.5" />
+        <param name="volume_resolution" value="512" />
+        <param name="marching_cubes_volume_size" value="256" />-->
+        <param name="depth_height" type="int" value="424" />
+        <param name="depth_width" type="int" value="512" />
+        <param name="autostart" value="true" />
+        <param name="response_topic" value="/kinfu1_response_topic" />
+        <param name="request_topic" value="/kinfu1_request_topic" />
+        <param name="command_topic" value="/kinfu1_command_topic" />
+    </node>
+  
+    <node pkg="kinfu_monitor" type="node" name="kinfu_monitor" output="screen">
+        <remap from="image" to="kinfu_current_view" />
+        <param name="file_dir" value="$(arg tempdir)/" />
+    </node>
+	
+</launch>

@@ -57,7 +57,7 @@ namespace pcl
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
       void
-      ScreenshotManager::saveImage(const Eigen::Affine3f &camPose, pcl::gpu::PtrStepSz<const PixelRGB> rgb24, std::string file_prefx)
+      ScreenshotManager::saveImage(const Eigen::Affine3f &camPose, pcl::gpu::PtrStepSz<const PixelRGB> rgb24, std::string file_prefx, int img_width, int img_height)
       {
 
         PCL_WARN ("[o] [o] [o] [o] Saving screenshot [o] [o] [o] [o]\n");
@@ -79,7 +79,7 @@ namespace pcl
                     writePose (filename_pose, teVecs, erreMats);
           
         // Save Image
-        pcl::io::saveRgbPNGFile (filename_image, (unsigned char*)rgb24.data, 640,480);
+        pcl::io::saveRgbPNGFile (filename_image, (unsigned char*)rgb24.data, img_width, img_height);
           
         screenshot_counter++;
       }
