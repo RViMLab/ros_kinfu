@@ -6,6 +6,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include <kinfu_msgs/RequestAction.h>
+#include <kinfu_msgs/KinfuCommand.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <actionlib/client/simple_action_client.h>
 
@@ -18,12 +19,29 @@ std::string file_dir  = "";
 static const std::string OPENCV_WINDOW = "Kinfu Monitor";
 static const std::string OCCLUDED_NAME = "occluded.jpg";
 static const unsigned    BUTTON_HEIGHT = 50;
-static const unsigned    NUM_BUTTONS   = 2;
+static const unsigned    NUM_BUTTONS   = 6;
+static const unsigned    BUTTONS_PER_ROW = 3;
+static const unsigned    NUM_ROWS      = ceil(NUM_BUTTONS/double(BUTTONS_PER_ROW));
+
 cv::Mat3b canvas;
 std::string buttonText("Save Mesh");
 
-cv::Rect button1;
-cv::Rect button2;
+struct button{
+    cv::Rect location;
+    cv::Vec3b colour;
+    std::string text;
+};
+
+button create_button(std::string text,cv::Vec3b colour)
+{
+    button b;
+    b.text=text;
+    b.colour=colour;
+    return b;
+}
+
+std::vector<button> buttons;
+ros::Publisher cmd_pub;
 
 int texture_obj(){
     ROS_ERROR("NOT YET IMPLEMENTED");
@@ -84,15 +102,37 @@ void callBackFunc(int event, int x, int y, int flags, void* userdata)
 {
     if (event == cv::EVENT_LBUTTONDOWN)
     {
-        if (button1.contains(cv::Point(x, y)))
+        if (buttons[0].location.contains(cv::Point(x, y)))
         {
             save_ply();
             //cv::rectangle(canvas(button1), button1, cv::Scalar(0,0,255), 2);
         }
-        if (button2.contains(cv::Point(x, y)))
+        if (buttons[1].location.contains(cv::Point(x, y)))
         {
             texture_obj();
             //cv::rectangle(canvas(button2), button2, cv::Scalar(0,0,255), 2);
+        }
+        if (buttons[2].location.contains(cv::Point(x, y)))
+        {
+            ros::shutdown();
+        }
+        if (buttons[3].location.contains(cv::Point(x, y)))
+        {
+            kinfu_msgs::KinfuCommand msg;
+            msg.command_type=kinfu_msgs::KinfuCommand::COMMAND_TYPE_RESET;
+            cmd_pub.publish(msg);
+        }
+        if (buttons[4].location.contains(cv::Point(x, y)))
+        {
+            kinfu_msgs::KinfuCommand msg;
+            msg.command_type=kinfu_msgs::KinfuCommand::COMMAND_TYPE_SUSPEND;
+            cmd_pub.publish(msg);
+        }
+        if (buttons[5].location.contains(cv::Point(x, y)))
+        {
+            kinfu_msgs::KinfuCommand msg;
+            msg.command_type=kinfu_msgs::KinfuCommand::COMMAND_TYPE_RESUME;
+            cmd_pub.publish(msg);
         }
     }
     if (event == cv::EVENT_LBUTTONUP)
@@ -123,6 +163,8 @@ public:
     ros::NodeHandle pnh = ros::NodeHandle("~");
     pnh.getParam("file_name",file_name);
     pnh.getParam("file_dir",file_dir);
+
+    cmd_pub = nh_.advertise<kinfu_msgs::KinfuCommand>("command", 1);
 
     cv::namedWindow(OPENCV_WINDOW);
     cv::setMouseCallback(OPENCV_WINDOW, callBackFunc);
@@ -158,21 +200,21 @@ public:
       if(!received_image_){return;}
 
       // Your buttons
-      button1 = cv::Rect(0,0,image_.cols/NUM_BUTTONS, BUTTON_HEIGHT);
-      button2 = cv::Rect(image_.cols/NUM_BUTTONS,0,image_.cols/NUM_BUTTONS, BUTTON_HEIGHT);
 
       // The canvas
-      canvas = cv::Mat3b(image_.rows + BUTTON_HEIGHT, image_.cols, cv::Vec3b(0,0,0));
+      canvas = cv::Mat3b(image_.rows + BUTTON_HEIGHT * NUM_ROWS, image_.cols, cv::Vec3b(0,0,0));
 
       // Draw the buttons
-      canvas(button1) = cv::Vec3b(200,200,200);
-      putText(canvas(button1), buttonText, cv::Point(button1.width*0.35, button1.height*0.7), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,0,0));
-
-      canvas(button2) = cv::Vec3b(200,000,200);
-      putText(canvas(button2), "Make Textured", cv::Point(button2.width*0.35, button2.height*0.7), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,0,0));
+      for(int ii=0;ii<buttons.size();ii++){
+          int a=image_.cols*(ii%BUTTONS_PER_ROW)/BUTTONS_PER_ROW;
+          int b=BUTTON_HEIGHT*(ii/BUTTONS_PER_ROW);
+          buttons[ii].location = cv::Rect(a,b,image_.cols/BUTTONS_PER_ROW, BUTTON_HEIGHT);
+          canvas(buttons[ii].location) = buttons[ii].colour;
+          putText(canvas(buttons[ii].location), buttons[ii].text, cv::Point(buttons[ii].location.width*0.35, buttons[ii].location.height*0.7), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,0,0));
+      }
 
       // Draw the image
-      image_.copyTo(canvas(cv::Rect(0, BUTTON_HEIGHT, image_.cols, image_.rows)));
+      image_.copyTo(canvas(cv::Rect(0, BUTTON_HEIGHT * NUM_ROWS, image_.cols, image_.rows)));
 
       cv::imshow(OPENCV_WINDOW, canvas);
       cv::waitKey(3);
@@ -181,8 +223,16 @@ public:
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "kinfu_monitor");
-  ImageConverter ic;
-  ros::spin();
-  return 0;
+    buttons.push_back(create_button(buttonText,cv::Vec3b(200,200,200)));
+    buttons.push_back(create_button("Make Textured",cv::Vec3b(200,000,200)));
+    buttons.push_back(create_button("Exit",cv::Vec3b(200,200,000)));
+    buttons.push_back(create_button("Reset",cv::Vec3b(000,200,200)));
+    buttons.push_back(create_button("Suspend",cv::Vec3b(000,200,000)));
+    buttons.push_back(create_button("Resume",cv::Vec3b(000,000,200)));
+
+
+    ros::init(argc, argv, "kinfu_monitor");
+    ImageConverter ic;
+    ros::spin();
+    return 0;
 }
