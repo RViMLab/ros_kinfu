@@ -38,6 +38,7 @@
   
     <node pkg="kinfu_monitor" type="node" name="kinfu_monitor" output="screen">
         <remap from="image" to="kinfu_current_view" />
+        <remap from="command" to="/kinfu1_command_topic" />
         <param name="file_dir" value="$(arg tempdir)/" />
     </node>
 	
